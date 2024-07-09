@@ -26,7 +26,10 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 
+#include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_broadcaster.hpp"
+#include "tf2_ros/transform_listener.h"
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <message_filters/subscriber.hpp>
 #include <message_filters/sync_policies/approximate_time.hpp>
@@ -44,6 +47,7 @@ class ImuFilterMadgwickRos : public imu_filter::BaseNode
     typedef sensor_msgs::msg::Imu ImuMsg;
     typedef sensor_msgs::msg::MagneticField MagMsg;
     typedef geometry_msgs::msg::Vector3Stamped RpyVectorMsg;
+    typedef geometry_msgs::msg::PoseStamped PoseMsg;
 
     typedef message_filters::sync_policies::ApproximateTime<ImuMsg, MagMsg>
         SyncPolicy;
@@ -68,7 +72,10 @@ class ImuFilterMadgwickRos : public imu_filter::BaseNode
     rclcpp::Publisher<RpyVectorMsg>::SharedPtr rpy_filtered_debug_publisher_;
     rclcpp::Publisher<RpyVectorMsg>::SharedPtr rpy_raw_debug_publisher_;
     rclcpp::Publisher<ImuMsg>::SharedPtr imu_publisher_;
+    rclcpp::Publisher<PoseMsg>::SharedPtr orientation_filtered_publisher_;
     tf2_ros::TransformBroadcaster tf_broadcaster_;
+    tf2_ros::Buffer tf_buffer_;
+    tf2_ros::TransformListener tf_listener_;
 
     rclcpp::TimerBase::SharedPtr check_topics_timer_;
 
@@ -103,6 +110,7 @@ class ImuFilterMadgwickRos : public imu_filter::BaseNode
     // **** member functions
     void publishFilteredMsg(ImuMsg::ConstSharedPtr imu_msg_raw);
     void publishTransform(ImuMsg::ConstSharedPtr imu_msg_raw);
+    void publishOrientationFiltered(const ImuMsg& imu_msg);
 
     void publishRawMsg(const rclcpp::Time& t, float roll, float pitch,
                        float yaw);
