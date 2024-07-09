@@ -63,6 +63,12 @@ ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
     declare_parameter("publish_debug_topics", false, descriptor);
     get_parameter("publish_debug_topics", publish_debug_topics_);
 
+    double time_jump_threshold = 0.0;
+    declare_parameter("time_jump_threshold", 0.0, descriptor);
+    get_parameter("time_jump_threshold", time_jump_threshold);
+    time_jump_threshold_duration_ =
+        rclcpp::Duration::from_seconds(time_jump_threshold);
+
     double yaw_offset = 0.0;
     declare_parameter("yaw_offset", 0.0, descriptor);
     get_parameter("yaw_offset", yaw_offset);
@@ -129,6 +135,8 @@ ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
         RCLCPP_INFO(get_logger(),
                     "The gravity vector is kept in the IMU message.");
     }
+
+    last_ros_time_ = this->get_clock()->now();
 
     // **** define reconfigurable parameters.
     double gain;
@@ -226,6 +234,8 @@ ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
 
 void ImuFilterMadgwickRos::imuCallback(ImuMsg::ConstSharedPtr imu_msg_raw)
 {
+    checkTimeJump();
+
     std::lock_guard<std::mutex> lock(mutex_);
 
     const geometry_msgs::msg::Vector3 &ang_vel = imu_msg_raw->angular_velocity;
@@ -291,6 +301,8 @@ void ImuFilterMadgwickRos::imuCallback(ImuMsg::ConstSharedPtr imu_msg_raw)
 void ImuFilterMadgwickRos::imuMagCallback(ImuMsg::ConstSharedPtr imu_msg_raw,
                                           MagMsg::ConstSharedPtr mag_msg)
 {
+    checkTimeJump();
+
     std::lock_guard<std::mutex> lock(mutex_);
 
     const geometry_msgs::msg::Vector3 &ang_vel = imu_msg_raw->angular_velocity;
@@ -580,6 +592,40 @@ void ImuFilterMadgwickRos::checkTopicsTimerCallback()
         RCLCPP_WARN_STREAM(get_logger(), "Still waiting for data on topic "
                                              << imu_subscriber_->getTopic()
                                              << "...");
+}
+
+void ImuFilterMadgwickRos::checkTimeJump()
+{
+    const auto now = this->get_clock()->now();
+    if (last_ros_time_ == rclcpp::Time(0, 0, last_ros_time_.get_clock_type()) ||
+        last_ros_time_ <= now + time_jump_threshold_duration_)
+    {
+        last_ros_time_ = now;
+        return;
+    }
+
+    RCLCPP_WARN(this->get_logger(),
+                "Detected jump back in time of %.1f s. Resetting IMU filter.",
+                (last_ros_time_ - now).seconds());
+
+    if (time_jump_threshold_duration_ == rclcpp::Duration(0, 0) &&
+        this->get_clock()->get_clock_type() == RCL_SYSTEM_TIME)
+    {
+        RCLCPP_INFO(this->get_logger(),
+                    "To ignore short time jumps back, use ~time_jump_threshold "
+                    "parameter of the filter.");
+    }
+
+    reset();
+}
+
+void ImuFilterMadgwickRos::reset()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    filter_.reset();
+    initialized_ = false;
+    last_time_ = rclcpp::Time(0, 0, this->get_clock()->get_clock_type());
+    last_ros_time_ = this->get_clock()->now();
 }
 
 #include "rclcpp_components/register_node_macro.hpp"

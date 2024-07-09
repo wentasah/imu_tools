@@ -59,6 +59,9 @@ class ImuFilterMadgwickRos : public imu_filter::BaseNode
     IMU_FILTER_MADGWICK_CPP_PUBLIC
     explicit ImuFilterMadgwickRos(const rclcpp::NodeOptions& options);
 
+    // Reset the filter to the initial state.
+    void reset();
+
     // Callbacks are public so they can be called when used as a library
     void imuCallback(ImuMsg::ConstSharedPtr imu_msg_raw);
     void imuMagCallback(ImuMsg::ConstSharedPtr imu_msg_raw,
@@ -97,11 +100,13 @@ class ImuFilterMadgwickRos : public imu_filter::BaseNode
     geometry_msgs::msg::Vector3 mag_bias_;
     double orientation_variance_;
     double yaw_offset_total_;
+    rclcpp::Duration time_jump_threshold_duration_{0, 0};
 
     // **** state variables
     std::mutex mutex_;
     bool initialized_;
     rclcpp::Time last_time_;
+    rclcpp::Time last_ros_time_;
     tf2::Quaternion yaw_offsets_;
 
     // **** filter implementation
@@ -120,4 +125,7 @@ class ImuFilterMadgwickRos : public imu_filter::BaseNode
     void checkTopicsTimerCallback();
 
     void applyYawOffset(double& q0, double& q1, double& q2, double& q3);
+
+    // Check whether ROS time has jumped back. If so, reset the filter.
+    void checkTimeJump();
 };
