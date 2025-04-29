@@ -2,6 +2,13 @@
 Changelog for package rviz_imu_plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix Qt5 version requirement (`#213 <https://github.com/CCNYRoboticsLab/imu_tools/issues/213>`_)
+  - Use rviz_QT_VERSION
+  - Drop OpenGL dependency
+* Contributors: Robert Haschke
+
 1.2.6 (2024-01-12)
 ------------------
 
