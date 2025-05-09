@@ -22,14 +22,16 @@ target_compile_features(imu_filter_madgwick PUBLIC c_std_99 cxx_std_17)  # Requi
 target_include_directories(imu_filter_madgwick PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(imu_filter_madgwick
-  geometry_msgs
-  rclcpp
-  rclcpp_components
-  sensor_msgs
-  std_msgs
-  tf2_geometry_msgs
-  tf2_ros
+target_link_libraries(imu_filter_madgwick PUBLIC
+  ${geometry_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  rclcpp::rclcpp
+  rclcpp_components::component
+  rclcpp_components::component_manager
+  sensor_msgs::sensor_msgs_library
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::tf2_ros
 )
 rclcpp_components_register_nodes(imu_filter_madgwick "ImuFilterMadgwickRos")
 target_compile_definitions(imu_filter_madgwick
