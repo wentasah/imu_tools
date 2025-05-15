@@ -27,8 +27,8 @@
 #include "imu_filter_madgwick/stateless_orientation.h"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-#include <tf2/LinearMath/Matrix3x3.h>
-#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
 
 using namespace std::chrono_literals;
 using namespace rclcpp;
@@ -200,7 +200,7 @@ ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
     // Synchronize inputs. Topic subscriptions happen on demand in the
     // connection callback.
     const int queue_size = 5;
-    rmw_qos_profile_t qos = rmw_qos_profile_sensor_data;
+    auto qos = rclcpp::QoS(rclcpp::SensorDataQoS());
     imu_subscriber_.reset(new ImuSubscriber(this, "imu/data_raw", qos));
 
     if (use_mag_)
