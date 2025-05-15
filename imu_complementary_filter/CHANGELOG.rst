@@ -2,6 +2,12 @@
 Changelog for package imu_complementary_filter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix deprecated header includes (`#216 <https://github.com/CCNYRoboticsLab/imu_tools/issues/216>`_)
+* [kilted] Update deprecated call to ament_target_dependencies (`#215 <https://github.com/CCNYRoboticsLab/imu_tools/issues/215>`_)
+* Contributors: David V. Lu!!, Martin Günther
+
 2.2.0 (2024-10-01)
 ------------------
 * Add QoS overriding options (`#207 <https://github.com/CCNYRoboticsLab/imu_tools/issues/207>`_)
