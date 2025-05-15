@@ -2,8 +2,8 @@
 Changelog for package imu_complementary_filter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.2.1 (2025-05-15)
+------------------
 * Fix deprecated header includes (`#216 <https://github.com/CCNYRoboticsLab/imu_tools/issues/216>`_)
 * [kilted] Update deprecated call to ament_target_dependencies (`#215 <https://github.com/CCNYRoboticsLab/imu_tools/issues/215>`_)
 * Contributors: David V. Lu!!, Martin Günther
