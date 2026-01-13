@@ -2,6 +2,15 @@
 Changelog for package imu_complementary_filter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fixed a static library linking issue with the imu_complementary_filter package on Windows. (`#218 <https://github.com/CCNYRoboticsLab/imu_tools/issues/218>`_)
+* Merge pull request `#202 <https://github.com/CCNYRoboticsLab/imu_tools/issues/202>`_ from enwaytech:sr/reverse-backport-from-noetic  (`#202 <https://github.com/CCNYRoboticsLab/imu_tools/issues/202>`_)
+* Added ability to reset IMU filters when ROS time jumps back (`#165 <https://github.com/CCNYRoboticsLab/imu_tools/issues/165>`_)
+* Update deprecated TransformBroadcaster constructor (`#223 <https://github.com/CCNYRoboticsLab/imu_tools/issues/223>`_)
+* Update deprecated message filters and tf2 headers (`#222 <https://github.com/CCNYRoboticsLab/imu_tools/issues/222>`_)
+* Contributors: Alejandro Hernández Cordero, Martin Günther, Sharmin Ramli, wentywenty
+
 2.2.1 (2025-05-15)
 ------------------
 * Fix deprecated header includes (`#216 <https://github.com/CCNYRoboticsLab/imu_tools/issues/216>`_)

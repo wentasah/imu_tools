@@ -2,6 +2,17 @@
 Changelog for package imu_filter_madgwick
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#202 <https://github.com/CCNYRoboticsLab/imu_tools/issues/202>`_ from enwaytech:sr/reverse-backport-from-noetic  (`#202 <https://github.com/CCNYRoboticsLab/imu_tools/issues/202>`_)
+* Added ability to reset IMU filters when ROS time jumps back (`#165 <https://github.com/CCNYRoboticsLab/imu_tools/issues/165>`_)
+* Increase max stddev, add pose visualization (`#192 <https://github.com/CCNYRoboticsLab/imu_tools/issues/192>`_)
+* use modern postSetParametersCallback (`#220 <https://github.com/CCNYRoboticsLab/imu_tools/issues/220>`_)
+  Use modern postSetParametersCallback. Also solves the bug causing every Double parameters change in the entire system to be printed as a change in this node.
+* Update deprecated TransformBroadcaster constructor (`#223 <https://github.com/CCNYRoboticsLab/imu_tools/issues/223>`_)
+* Update deprecated message filters and tf2 headers (`#222 <https://github.com/CCNYRoboticsLab/imu_tools/issues/222>`_)
+* Contributors: Adi Vardi, Alejandro Hernández Cordero, Martin Günther, Sharmin Ramli
+
 2.2.1 (2025-05-15)
 ------------------
 * Fix deprecated header includes (`#216 <https://github.com/CCNYRoboticsLab/imu_tools/issues/216>`_)
