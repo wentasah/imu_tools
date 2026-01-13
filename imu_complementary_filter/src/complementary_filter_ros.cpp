@@ -49,6 +49,8 @@ ComplementaryFilterROS::ComplementaryFilterROS()
     RCLCPP_INFO(this->get_logger(), "Starting ComplementaryFilterROS");
     initializeParams();
 
+    last_ros_time_ = this->get_clock()->now();
+
     int queue_size = 5;
 
     // Register publishers:
@@ -109,6 +111,7 @@ void ComplementaryFilterROS::initializeParams()
     double bias_alpha;
     bool do_adaptive_gain;
     double orientation_stddev;
+    double time_jump_threshold;
 
     // set "Not Dynamically Reconfigurable Parameters"
     auto descriptor = rcl_interfaces::msg::ParameterDescriptor();
@@ -137,6 +140,11 @@ void ComplementaryFilterROS::initializeParams()
     orientation_stddev =
         this->declare_parameter<double>("orientation_stddev", 0.0);
     orientation_variance_ = orientation_stddev * orientation_stddev;
+
+    time_jump_threshold =
+        this->declare_parameter<double>("time_jump_threshold", 0.0);
+    time_jump_threshold_duration_ =
+        rclcpp::Duration::from_seconds(time_jump_threshold);
 
     filter_.setDoBiasEstimation(do_bias_estimation);
     filter_.setDoAdaptiveGain(do_adaptive_gain);
@@ -172,6 +180,8 @@ void ComplementaryFilterROS::initializeParams()
 
 void ComplementaryFilterROS::imuCallback(ImuMsg::ConstSharedPtr imu_msg_raw)
 {
+    checkTimeJump();
+
     const geometry_msgs::msg::Vector3 &a = imu_msg_raw->linear_acceleration;
     const geometry_msgs::msg::Vector3 &w = imu_msg_raw->angular_velocity;
     const rclcpp::Time &time = imu_msg_raw->header.stamp;
@@ -203,6 +213,8 @@ void ComplementaryFilterROS::imuCallback(ImuMsg::ConstSharedPtr imu_msg_raw)
 void ComplementaryFilterROS::imuMagCallback(ImuMsg::ConstSharedPtr imu_msg_raw,
                                             MagMsg::ConstSharedPtr mag_msg)
 {
+    checkTimeJump();
+
     const geometry_msgs::msg::Vector3 &a = imu_msg_raw->linear_acceleration;
     const geometry_msgs::msg::Vector3 &w = imu_msg_raw->angular_velocity;
     const geometry_msgs::msg::Vector3 &m = mag_msg->magnetic_field;
@@ -321,6 +333,39 @@ void ComplementaryFilterROS::publish(ImuMsg::ConstSharedPtr imu_msg_raw)
             tf_broadcaster_.sendTransform(transform);
         }
     }
+}
+
+void ComplementaryFilterROS::checkTimeJump()
+{
+    const auto now = this->get_clock()->now();
+    if (last_ros_time_ == rclcpp::Time(0, 0, last_ros_time_.get_clock_type()) ||
+        last_ros_time_ <= now + time_jump_threshold_duration_)
+    {
+        last_ros_time_ = now;
+        return;
+    }
+
+    RCLCPP_WARN(this->get_logger(),
+                "Detected jump back in time of %.1f s. Resetting IMU filter.",
+                (last_ros_time_ - now).seconds());
+
+    if (time_jump_threshold_duration_ == rclcpp::Duration(0, 0) &&
+        this->get_clock()->get_clock_type() == RCL_SYSTEM_TIME)
+    {
+        RCLCPP_INFO(this->get_logger(),
+                    "To ignore short time jumps back, use ~time_jump_threshold "
+                    "parameter of the filter.");
+    }
+
+    reset();
+}
+
+void ComplementaryFilterROS::reset()
+{
+    filter_.reset();
+    time_prev_ = rclcpp::Time(0, 0, this->get_clock()->get_clock_type());
+    last_ros_time_ = this->get_clock()->now();
+    initialized_filter_ = false;
 }
 
 }  // namespace imu_tools

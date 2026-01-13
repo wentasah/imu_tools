@@ -37,6 +37,8 @@ using namespace std::placeholders;
 ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
     : BaseNode("imu_filter_madgwick", options),
       tf_broadcaster_(*this),
+      tf_buffer_(this->get_clock()),
+      tf_listener_(tf_buffer_),
       initialized_(false)
 {
     RCLCPP_INFO(get_logger(), "Starting ImuFilter");
@@ -60,6 +62,12 @@ ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
     get_parameter("remove_gravity_vector", remove_gravity_vector_);
     declare_parameter("publish_debug_topics", false, descriptor);
     get_parameter("publish_debug_topics", publish_debug_topics_);
+
+    double time_jump_threshold = 0.0;
+    declare_parameter("time_jump_threshold", 0.0, descriptor);
+    get_parameter("time_jump_threshold", time_jump_threshold);
+    time_jump_threshold_duration_ =
+        rclcpp::Duration::from_seconds(time_jump_threshold);
 
     double yaw_offset = 0.0;
     declare_parameter("yaw_offset", 0.0, descriptor);
@@ -128,6 +136,8 @@ ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
                     "The gravity vector is kept in the IMU message.");
     }
 
+    last_ros_time_ = this->get_clock()->now();
+
     // **** define reconfigurable parameters.
     double gain;
     floating_point_range float_range = {0.0, 1.0, 0};
@@ -151,7 +161,7 @@ ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
     add_parameter("mag_bias_z", rclcpp::ParameterValue(0.0), float_range,
                   "Magnetometer bias (hard iron correction), z component.");
     double orientation_stddev;
-    float_range = {0.0, 1.0, 0};
+    float_range = {0.0, 100.0, 0};
     add_parameter("orientation_stddev", rclcpp::ParameterValue(0.0),
                   float_range,
                   "Standard deviation of the orientation estimate.");
@@ -191,6 +201,10 @@ ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
         rpy_raw_debug_publisher_ =
             create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/rpy/raw",
                                                                  5);
+
+        orientation_filtered_publisher_ =
+            create_publisher<geometry_msgs::msg::PoseStamped>(
+                "imu/orientation_filtered", 5);
     }
 
     // **** register subscribers
@@ -220,6 +234,8 @@ ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
 
 void ImuFilterMadgwickRos::imuCallback(ImuMsg::ConstSharedPtr imu_msg_raw)
 {
+    checkTimeJump();
+
     std::lock_guard<std::mutex> lock(mutex_);
 
     const geometry_msgs::msg::Vector3 &ang_vel = imu_msg_raw->angular_velocity;
@@ -285,6 +301,8 @@ void ImuFilterMadgwickRos::imuCallback(ImuMsg::ConstSharedPtr imu_msg_raw)
 void ImuFilterMadgwickRos::imuMagCallback(ImuMsg::ConstSharedPtr imu_msg_raw,
                                           MagMsg::ConstSharedPtr mag_msg)
 {
+    checkTimeJump();
+
     std::lock_guard<std::mutex> lock(mutex_);
 
     const geometry_msgs::msg::Vector3 &ang_vel = imu_msg_raw->angular_velocity;
@@ -480,7 +498,38 @@ void ImuFilterMadgwickRos::publishFilteredMsg(
 
         rpy.header = imu_msg_raw->header;
         rpy_filtered_debug_publisher_->publish(rpy);
+
+        publishOrientationFiltered(imu_msg);
     }
+}
+
+void ImuFilterMadgwickRos::publishOrientationFiltered(const ImuMsg &imu_msg)
+{
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.stamp = imu_msg.header.stamp;
+    pose.header.frame_id = fixed_frame_;
+    pose.pose.orientation = imu_msg.orientation;
+
+    // get the current transform from the fixed frame to the imu frame
+    geometry_msgs::msg::TransformStamped transform;
+    try
+    {
+        transform = tf_buffer_.lookupTransform(
+            fixed_frame_, imu_msg.header.frame_id, imu_msg.header.stamp,
+            rclcpp::Duration::from_seconds(0.1));
+    } catch (tf2::TransformException &ex)
+    {
+        RCLCPP_WARN(
+            this->get_logger(), "Could not get transform from %s to %s: %s",
+            fixed_frame_.c_str(), imu_msg.header.frame_id.c_str(), ex.what());
+        return;
+    }
+
+    pose.pose.position.x = transform.transform.translation.x;
+    pose.pose.position.y = transform.transform.translation.y;
+    pose.pose.position.z = transform.transform.translation.z;
+
+    orientation_filtered_publisher_->publish(pose);
 }
 
 void ImuFilterMadgwickRos::publishRawMsg(const rclcpp::Time &t, float roll,
@@ -543,6 +592,40 @@ void ImuFilterMadgwickRos::checkTopicsTimerCallback()
         RCLCPP_WARN_STREAM(get_logger(), "Still waiting for data on topic "
                                              << imu_subscriber_->getTopic()
                                              << "...");
+}
+
+void ImuFilterMadgwickRos::checkTimeJump()
+{
+    const auto now = this->get_clock()->now();
+    if (last_ros_time_ == rclcpp::Time(0, 0, last_ros_time_.get_clock_type()) ||
+        last_ros_time_ <= now + time_jump_threshold_duration_)
+    {
+        last_ros_time_ = now;
+        return;
+    }
+
+    RCLCPP_WARN(this->get_logger(),
+                "Detected jump back in time of %.1f s. Resetting IMU filter.",
+                (last_ros_time_ - now).seconds());
+
+    if (time_jump_threshold_duration_ == rclcpp::Duration(0, 0) &&
+        this->get_clock()->get_clock_type() == RCL_SYSTEM_TIME)
+    {
+        RCLCPP_INFO(this->get_logger(),
+                    "To ignore short time jumps back, use ~time_jump_threshold "
+                    "parameter of the filter.");
+    }
+
+    reset();
+}
+
+void ImuFilterMadgwickRos::reset()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    filter_.reset();
+    initialized_ = false;
+    last_time_ = rclcpp::Time(0, 0, this->get_clock()->get_clock_type());
+    last_ros_time_ = this->get_clock()->now();
 }
 
 #include "rclcpp_components/register_node_macro.hpp"
