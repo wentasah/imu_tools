@@ -2,8 +2,8 @@
 Changelog for package rviz_imu_plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.2.2 (2026-01-13)
+------------------
 * Update deprecated message filters and tf2 headers (`#222 <https://github.com/CCNYRoboticsLab/imu_tools/issues/222>`_)
 * Add Qt6 support (`#221 <https://github.com/CCNYRoboticsLab/imu_tools/issues/221>`_)
 * Contributors: Alejandro Hernández Cordero

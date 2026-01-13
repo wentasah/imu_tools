@@ -2,8 +2,8 @@
 Changelog for package imu_filter_madgwick
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.2.2 (2026-01-13)
+------------------
 * Merge pull request `#202 <https://github.com/CCNYRoboticsLab/imu_tools/issues/202>`_ from enwaytech:sr/reverse-backport-from-noetic  (`#202 <https://github.com/CCNYRoboticsLab/imu_tools/issues/202>`_)
 * Added ability to reset IMU filters when ROS time jumps back (`#165 <https://github.com/CCNYRoboticsLab/imu_tools/issues/165>`_)
 * Increase max stddev, add pose visualization (`#192 <https://github.com/CCNYRoboticsLab/imu_tools/issues/192>`_)
