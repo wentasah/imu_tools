@@ -35,6 +35,7 @@ namespace rviz {
 ImuAccVisual::ImuAccVisual(Ogre::SceneManager* scene_manager,
                            Ogre::SceneNode* parent_node)
     : acc_vector_(NULL),
+      direction_(0, 0, 1),
       arrow_length_(9.81),
       arrow_radius_(0.50),
       head_length_(1.00),
