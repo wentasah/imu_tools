@@ -31,7 +31,7 @@
 #define RVIZ_IMU_PLUGIN_IMU_ACC_VISUAL_H
 
 #include <sensor_msgs/Imu.h>
-#include <OGRE/OgreVector3.h>
+#include <OGRE/Ogre.h>
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
 #include <rviz/ogre_helpers/arrow.h>
