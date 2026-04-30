@@ -2,6 +2,12 @@
 Changelog for package rviz_imu_plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Changes to build with qt6 (`#230 <https://github.com/CCNYRoboticsLab/imu_tools/issues/230>`_)
+* rviz_imu_plugin: fix invisible-arrow and stale-direction bugs in ImuAccVisual (`#226 <https://github.com/CCNYRoboticsLab/imu_tools/issues/226>`_)
+* Contributors: Kris, yadunund
+
 2.2.2 (2026-01-13)
 ------------------
 * Update deprecated message filters and tf2 headers (`#222 <https://github.com/CCNYRoboticsLab/imu_tools/issues/222>`_)

@@ -2,6 +2,9 @@
 Changelog for package imu_filter_madgwick
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.2.2 (2026-01-13)
 ------------------
 * Merge pull request `#202 <https://github.com/CCNYRoboticsLab/imu_tools/issues/202>`_ from enwaytech:sr/reverse-backport-from-noetic  (`#202 <https://github.com/CCNYRoboticsLab/imu_tools/issues/202>`_)
